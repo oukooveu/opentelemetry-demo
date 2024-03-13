@@ -8,7 +8,7 @@ datasources:
   - name: Prometheus
     uid: webstore-metrics
     type: prometheus
-    url: http://prometheus:9090
+    url: http://victoriametrics:8428
     editable: true
     isDefault: true
     jsonData:

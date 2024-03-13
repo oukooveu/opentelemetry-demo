@@ -21,7 +21,7 @@ exporters:
     tls:
       insecure: true
   otlphttp/prometheus:
-    endpoint: "http://prometheus:9090/api/v1/otlp"
+    endpoint: "http://victoriametrics:8428/api/v1/write"
     tls:
       insecure: true
   opensearch:

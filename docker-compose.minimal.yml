@@ -519,30 +519,40 @@ services:
       - "14268"  # jaeger ingest
     logging: *logging
 
-  # Prometheus
-  prometheus:
-    image: ${PROMETHEUS_IMAGE}
-    container_name: prometheus
+  # VictoriaMetrics Agent
+  vmagent:
+    container_name: vmagent
     command:
-      - --web.console.templates=/etc/prometheus/consoles
-      - --web.console.libraries=/etc/prometheus/console_libraries
-      - --storage.tsdb.retention.time=1h
-      - --config.file=/etc/prometheus/prometheus-config.yaml
-      - --storage.tsdb.path=/prometheus
-      - --web.enable-lifecycle
-      - --web.route-prefix=/
-      - --enable-feature=exemplar-storage
-      - --enable-feature=otlp-write-receiver
-      - --enable-feature=remote-write-receiver
+      - "--promscrape.config=/etc/prometheus/prometheus.yml"
+      - "--remoteWrite.url=http://victoriametrics:8428/api/v1/write"
+    image: victoriametrics/vmagent:latest
+    depends_on:
+      - "victoriametrics"
+    ports:
+      - 8429
     volumes:
-      - ./src/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
-    deploy:
-      resources:
-        limits:
-          memory: 300M
+      - ./src/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+    logging: *logging
+
+  # VictoriaMetrics
+  victoriametrics:
+    container_name: victoriametrics
+    image: victoriametrics/victoria-metrics:latest
+    command:
+      - "--storageDataPath=/storage"
+      - "--graphiteListenAddr=:2003"
+      - "--opentsdbListenAddr=:4242"
+      - "--httpListenAddr=:8428"
+      - "--influxListenAddr=:8089"
     restart: unless-stopped
     ports:
-      - "${PROMETHEUS_SERVICE_PORT}:${PROMETHEUS_SERVICE_PORT}"
+      - 8428       # http
+      - 8089       # influx
+      - 8089/udp
+      - 2003       # graphite
+      - 2003/udp
+      - 4242       # opentsdb
     logging: *logging
 
   # OpenSearch
