@@ -502,6 +502,23 @@ services:
     environment:
       - ENVOY_PORT
 
+  # Tempo
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: unless-stopped
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./src/tempo/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200"   # tempo
+      - "4317"   # otlp grpc
+      - "4318"   # otlp http
+      - "9095"   # tempo grpc
+      - "9411"   # zipkin
+      - "14268"  # jaeger ingest
+    logging: *logging
+
   # Prometheus
   prometheus:
     image: ${PROMETHEUS_IMAGE}
@@ -516,6 +533,7 @@ services:
       - --web.route-prefix=/
       - --enable-feature=exemplar-storage
       - --enable-feature=otlp-write-receiver
+      - --enable-feature=remote-write-receiver
     volumes:
       - ./src/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
     deploy:
