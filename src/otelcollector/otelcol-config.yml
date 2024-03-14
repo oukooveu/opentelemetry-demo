@@ -16,10 +16,6 @@ receivers:
 
 exporters:
   debug:
-  otlp:
-    endpoint: "tempo:4317"
-    tls:
-      insecure: true
   otlphttp/prometheus:
     endpoint: "http://victoriametrics:8428/api/v1/write"
     tls:
@@ -30,6 +26,17 @@ exporters:
       endpoint: "http://opensearch:9200"
       tls:
         insecure: true
+  clickhouse:
+    endpoint: tcp://clickhouse:9000?dial_timeout=10s&compress=lz4
+    ttl_days: 3
+    traces_table_name: otel_traces
+    timeout: 5s
+    database: default
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
 processors:
   batch:
@@ -42,7 +49,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp, debug, spanmetrics]
+      exporters: [debug, spanmetrics, clickhouse]
     metrics:
       receivers: [httpcheck/frontendproxy, otlp, spanmetrics]
       processors: [batch]

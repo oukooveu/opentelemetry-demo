@@ -18,18 +18,24 @@ datasources:
         - url: http://localhost:8080/jaeger/ui/trace/$${__value.raw}
           name: trace_id
           urlDisplayLabel: View in Jaeger UI
-  - name: Tempo
-    type: tempo
-    access: proxy
-    orgId: 1
-    url: http://tempo:3200
-    basicAuth: false
-    isDefault: false
-    version: 1
-    editable: false
-    apiVersion: 1
-    uid: tempo
+  - name: ClickHouse
+    uid: clickhouse-traces
+    type: grafana-clickhouse-datasource
     jsonData:
-      httpMethod: GET
-      serviceMap:
-        datasourceUid: webstore-metrics
+      defaultDatabase: default
+      port: 9000
+      server: clickhouse
+      username: default
+      tlsSkipVerify: false
+      logs:
+        defaultDatabase: default
+        defaultTable: otel_traces
+        otelEnabled: true
+        otelVersion: latest
+      traces:
+        defaultDatabase: default
+        defaultTable: otel_traces
+        otelEnabled: true
+        otelVersion: latest
+    secureJsonData:
+      password:
