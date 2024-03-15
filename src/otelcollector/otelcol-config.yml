@@ -20,6 +20,14 @@ exporters:
     endpoint: "http://victoriametrics:8428/api/v1/write"
     tls:
       insecure: true
+  prometheusremotewrite:
+    endpoint: "http://victoriametrics:8428/api/v1/write"
+    tls:
+      insecure: true
+    # target_info:
+    #   enabled: true # metric is generated for each resource metric
+    # resource_to_telemetry_conversion:
+    #   enabled: true # convert resource attributes to metric labels
   opensearch:
     logs_index: otel
     http:
@@ -43,6 +51,10 @@ processors:
 
 connectors:
   spanmetrics:
+    dimensions:
+      - name: http.method
+      - name: http.status_code
+      - name: http.route
 
 service:
   pipelines:
@@ -51,10 +63,14 @@ service:
       processors: [batch]
       exporters: [debug, spanmetrics, clickhouse]
     metrics:
-      receivers: [httpcheck/frontendproxy, otlp, spanmetrics]
+      receivers: [httpcheck/frontendproxy, otlp]
       processors: [batch]
       exporters: [otlphttp/prometheus, debug]
     logs:
       receivers: [otlp]
       processors: [batch]
       exporters: [opensearch, debug]
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      processors: [batch]
+      exporters: [prometheusremotewrite, debug]
