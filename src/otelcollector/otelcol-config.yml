@@ -23,9 +23,9 @@ receivers:
       - type: syslog_parser
         protocol: rfc5424
         body: attributes.message
-        resource:
-          service:
-            name: attributes.appname
+      - type: copy
+        from: attributes.appname
+        to: resource['service.name']
   # filelog:
   #   include:
   #     - /var/log/otelcol.json
