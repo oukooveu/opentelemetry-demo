@@ -13,6 +13,10 @@ networks:
     name: opentelemetry-demo
     driver: bridge
 
+volumes:
+  otel-logs:
+    external: false
+
 services:
   # ******************
   # Core Demo Services
@@ -473,8 +477,12 @@ services:
     restart: unless-stopped
     environment:
       - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource, grafana-clickhouse-datasource"
+      - "GF_SECURITY_ADMIN_USER=admin"
+      - "GF_SECURITY_ADMIN_PASSWORD=password"
+      - "GF_SECURITY_ADMIN_EMAIL=admin@myoffice.team"
     volumes:
       - ./src/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./src/grafana/ldap.toml:/etc/grafana/ldap.toml
       - ./src/grafana/provisioning/:/etc/grafana/provisioning/
     ports:
       - "${GRAFANA_SERVICE_PORT}"
@@ -493,9 +501,11 @@ services:
     volumes:
       - ./src/otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
       - ./src/otelcollector/otelcol-config-extras.yml:/etc/otelcol-config-extras.yml
+      # - otel-logs:/var/log
     ports:
       - "${OTEL_COLLECTOR_PORT_GRPC}"
       - "${OTEL_COLLECTOR_PORT_HTTP}"
+      - "54526:54526"
     depends_on:
       - tempo
     logging: *logging

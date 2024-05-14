@@ -29,7 +29,7 @@ datasources:
       tlsSkipVerify: false
       logs:
         defaultDatabase: default
-        defaultTable: otel_traces
+        defaultTable: otel_logs
         otelEnabled: true
         otelVersion: latest
       traces:

@@ -5,7 +5,9 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:${OTEL_COLLECTOR_PORT_GRPC}
       http:
+        endpoint: 0.0.0.0:${OTEL_COLLECTOR_PORT_HTTP}
         cors:
           allowed_origins:
             - "http://*"
@@ -13,6 +15,32 @@ receivers:
   httpcheck/frontendproxy:
     targets:
       - endpoint: http://frontendproxy:${env:ENVOY_PORT}
+  syslog:
+    tcp:
+      listen_address: "0.0.0.0:54526"
+    protocol: rfc5424
+    operators:
+      - type: syslog_parser
+        protocol: rfc5424
+        body: attributes.message
+        resource:
+          service:
+            name: attributes.appname
+  # filelog:
+  #   include:
+  #     - /var/log/otelcol.json
+  #   resource:
+  #     host.name: 'localhost'
+  #     service.name: 'otel1'
+  #   operators:
+  #     - type: json_parser
+  #       timestamp:
+  #         parse_from: attributes.ts
+  #         layout_type: epoch
+  #         layout: 's.us'
+  #       severity:
+  #         parse_from: attributes.level
+  #       body: attributes.msg
 
 exporters:
   debug:
@@ -38,6 +66,7 @@ exporters:
     endpoint: tcp://clickhouse:9000?dial_timeout=10s&compress=lz4
     ttl_days: 3
     traces_table_name: otel_traces
+    logs_table_name: otel_logs
     timeout: 5s
     database: default
     retry_on_failure:
@@ -57,20 +86,37 @@ connectors:
       - name: http.route
 
 service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [debug, spanmetrics, clickhouse]
-    metrics:
-      receivers: [httpcheck/frontendproxy, otlp]
-      processors: [batch]
-      exporters: [otlphttp/prometheus, debug]
+  telemetry:
     logs:
-      receivers: [otlp]
+      level: INFO
+      encoding: json
+      # output_paths: /var/log/otelcol.json
+      # error_output_paths: /var/log/otelcol.json
+    metrics:
+      level: detailed
+      address: 0.0.0.0:8888
+    traces:
+      processors:
+        batch:
+          exporter:
+            otlp:
+              protocol: grpc/protobuf
+              endpoint: localhost:4317
+
+  pipelines:
+    # traces:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [debug, spanmetrics, clickhouse]
+    # metrics:
+    #   receivers: [httpcheck/frontendproxy, otlp]
+    #   processors: [batch]
+    #   exporters: [otlphttp/prometheus, debug]
+    logs:
+      receivers: [otlp, syslog]
       processors: [batch]
-      exporters: [opensearch, debug]
-    metrics/spanmetrics:
-      receivers: [spanmetrics]
-      processors: [batch]
-      exporters: [prometheusremotewrite, debug]
+      exporters: [clickhouse, debug]
+    # metrics/spanmetrics:
+    #   receivers: [spanmetrics]
+    #   processors: [batch]
+    #   exporters: [prometheusremotewrite, debug]

@@ -1,0 +1,36 @@
+[[servers]]
+host = "ipa.stageoffice.ru"
+port = 636
+use_ssl = true
+start_tls = false
+tls_ciphers = ["TLS_AES_128_GCM_SHA256"]
+min_tls_version = "TLS1.3"
+ssl_skip_verify = false
+
+bind_dn = "uid=%s,cn=users,cn=accounts,dc=stageoffice,dc=ru"
+
+timeout = 10
+search_filter = "(uid=%s)"
+
+search_base_dns = ["cn=users,cn=accounts,dc=stageoffice,dc=ru"]
+
+[servers.attributes]
+member_of = "memberOf"
+email =  "mail"
+
+[[servers.group_mappings]]
+group_dn = "cn=rnd_infra_paas_adm,cn=groups,cn=accounts,dc=stageoffice,dc=ru"
+org_role = "Admin"
+grafana_admin = true
+
+[[servers.group_mappings]]
+group_dn = "cn=rnd_infra_paas,cn=groups,cn=accounts,dc=stageoffice,dc=ru"
+org_role = "Admin"
+
+[[servers.group_mappings]]
+group_dn = "cn=rnd_infra,cn=groups,cn=accounts,dc=stageoffice,dc=ru"
+org_role = "Editor"
+
+[[servers.group_mappings]]
+group_dn = "*"
+org_role = "Viewer"
